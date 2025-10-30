@@ -22,7 +22,7 @@ server:
   port: 8082
 
 service:
-    url: http://ms_productos:8081
+  url: http://ms_productos:8081
 
 eureka:
   client:
@@ -59,22 +59,30 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,circuitbreakers,circuitbreakerevents
-  health:
-    circuitbreakers:
-      enabled: true
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
   tracing:
     sampling:
-      probability: 1.0 # captura 100% de trazas
-zipkin:
-  tracing:
-    endpoint: http://localhost:9411/api/v2/spans
+      probability: 1.0
+  zipkin:
+    tracing:
+      endpoint: http://localhost:9411/api/v2/spans
 
 feign:
   client:
     config:
       default:
+        decode404: false
         loggerLevel: full
+  circuitbreaker:
+    enabled: true
+
+logging:
+  level:
+    io.github.resilience4j: DEBUG
+
 
 #springdoc:
     #  swagger-ui:
