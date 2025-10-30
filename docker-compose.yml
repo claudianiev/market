@@ -1,0 +1,87 @@
+services:
+  productos-db:
+    image: postgres:15.2
+    container_name: productos_db
+    environment:
+      POSTGRES_DB: producto_db
+      POSTGRES_USER: cnieves
+      POSTGRES_PASSWORD: cnieves83
+    volumes:
+      - ./productos/db/producto.sql:/docker-entrypoint-initdb.d/producto.sql
+    ports:
+      - "5433:5432"
+    networks:
+      - backend-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cnieves -d producto_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  ms_productos:
+    build:
+      context: ./productos
+    container_name: ms_productos
+    depends_on:
+      productos-db:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      SPRING_DATASOURCE_URL: jdbc:postgresql://productos-db:5432/producto_db
+      SPRING_DATASOURCE_USERNAME: cnieves
+      SPRING_DATASOURCE_PASSWORD: cnieves83
+      SERVER_PORT: 8081
+      API_KEY: linktic123
+      SPRING_JPA_DATABASE_PLATFORM: org.hibernate.dialect.PostgreSQLDialect
+      SPRING_JPA_HIBERNATE_DDL_AUTO: none
+    ports:
+      - "8085:8081"
+    networks:
+      - backend-net
+
+  inventario-db:
+    image: postgres:15.2
+    container_name: inventario_db
+    environment:
+      POSTGRES_DB: inventario_db
+      POSTGRES_USER: cnieves
+      POSTGRES_PASSWORD: cnieves83
+    volumes:
+      - ./inventario/db/inventario.sql:/docker-entrypoint-initdb.d/inventario.sql
+    ports:
+      - "5434:5432"
+    networks:
+      - backend-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cnieves -d inventario_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  ms_inventario:
+    build:
+      context: ./inventario
+    container_name: ms_inventario
+    depends_on:
+      inventario-db:
+        condition: service_healthy
+      ms_productos:
+        condition: service_started
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      SPRING_DATASOURCE_URL: jdbc:postgresql://inventario_db:5432/inventario_db
+      SPRING_DATASOURCE_USERNAME: cnieves
+      SPRING_DATASOURCE_PASSWORD: cnieves83
+      SERVER_PORT: 8082
+      PRODUCTOS_SERVICE_URL: http://ms_productos:8081
+      API_KEY: linktic123
+      SPRING_JPA_DATABASE_PLATFORM: org.hibernate.dialect.PostgreSQLDialect
+      SPRING_JPA_HIBERNATE_DDL_AUTO: none
+    ports:
+      - "8086:8082"
+    networks:
+      - backend-net
+
+networks:
+  backend-net:
+    driver: bridge

@@ -1,0 +1,91 @@
+spring:
+  application:
+    name: ms-inventario
+
+  datasource:
+    url: jdbc:postgresql://localhost:5434/inventario_db
+    username: cnieves
+    password: cnieves83
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  sql:
+    init:
+      mode: always
+
+server:
+  port: 8082
+
+service:
+    url: http://ms_productos:8081
+
+eureka:
+  client:
+    register-with-eureka: true
+    fetch-registry: true
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      inventarioService:
+        register-health-indicator: true
+        sliding-window-size: 10
+        minimum-number-of-calls: 5
+        permitted-number-of-calls-in-half-open-state: 3
+        wait-duration-in-open-state: 10s
+        failure-rate-threshold: 50
+        slow-call-duration-threshold: 2s
+        slow-call-rate-threshold: 50
+
+  retry:
+    instances:
+      inventarioService:
+        max-attempts: 3
+        wait-duration: 1s
+
+  timelimiter:
+    instances:
+      inventarioService:
+        timeout-duration: 3s
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,circuitbreakers,circuitbreakerevents
+  health:
+    circuitbreakers:
+      enabled: true
+  tracing:
+    sampling:
+      probability: 1.0 # captura 100% de trazas
+zipkin:
+  tracing:
+    endpoint: http://localhost:9411/api/v2/spans
+
+feign:
+  client:
+    config:
+      default:
+        loggerLevel: full
+
+#springdoc:
+    #  swagger-ui:
+    #enabled: true
+    #path: /swagger-ui.html
+    #use-root-path: true
+    ##operations-sorter: alpha
+    #tags-sorter: alpha
+    #api-docs:
+    # path: /v3/api-docs
+    #enabled: true
+  #packages-to-scan: org.linktic.marketlinck.productos.controller
+  #default-consumes-media-type: application/vnd.api+json
+  #default-produces-media-type: application/vnd.api+json
